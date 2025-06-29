@@ -4,10 +4,13 @@
 #include <time.h>
 #include <signal.h>
 #include <unistd.h>
+#include <stdbool.h>
 
 // Colores
 
 #define BG_GREEN "\033[42m"
+#define BG_HC_GREEN "\033[0;102m"
+#define BG_HC_YELLOW "\033[0;103m"
 #define BG_BLUE "\033[44m"
 #define BG_WHITE "\033[47m"
 #define BG_BLACK "\033[40m"
@@ -45,13 +48,19 @@
 #define FICHA_NEGRA printf("%s X %s", BG_BLACK, COLOR_END)
 #define FICHA_BLANCA printf("%s O %s", BG_WHITE, COLOR_END)
 #define NO_FICHA printf("%s - %s", BG_GREEN, COLOR_END)
-#define CELDA_SELECCCIONADA printf("%s - %s", BG_BLUE, COLOR_END)
+#define CELDA_SELECCIONADA printf("%s - %s", BG_BLUE, COLOR_END)
+#define CELDA_POSIBLE printf("%s - %s",BG_HC_YELLOW , COLOR_END)
+
 
 // Jugadores
 
 #define NICK_SIZE 20
 #define JUGADOR_BLANCO 2
 #define JUGADOR_NEGRO 1
+#define POSICION_BLANCO 4
+#define POSICION_NEGRO 3
 
+#define CALCULA_JUGADOR_POR_TURNO(X) ((X) % 2 == 0 ? 2 : 1)
+#define CALCULA_JUGADOR_CONTRARIO_POR_TURNO(X) ((X) % 2 == 0 ? 1 : 2)
 #define JUGADOR_NEGRO_TEXT(X) printf("%s%s%s", BG_BLACK, X, COLOR_END)
 #define JUGADOR_BLANCO_TEXT(X) printf("%s%s%s", BG_WHITE, X, COLOR_END)
