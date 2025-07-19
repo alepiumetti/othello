@@ -1,10 +1,10 @@
 // Modulos
+#include <signal.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <signal.h>
 #include <unistd.h>
-#include <stdbool.h>
 
 // Colores
 
@@ -49,8 +49,7 @@
 #define FICHA_BLANCA printf("%s O %s", BG_WHITE, COLOR_END)
 #define NO_FICHA printf("%s - %s", BG_GREEN, COLOR_END)
 #define CELDA_SELECCIONADA printf("%s - %s", BG_BLUE, COLOR_END)
-#define CELDA_POSIBLE printf("%s - %s",BG_HC_YELLOW , COLOR_END)
-
+#define CELDA_POSIBLE printf("%s - %s", BG_HC_YELLOW, COLOR_END)
 
 // Jugadores
 
@@ -64,3 +63,10 @@
 #define CALCULA_JUGADOR_CONTRARIO_POR_TURNO(X) ((X) % 2 == 0 ? 1 : 2)
 #define JUGADOR_NEGRO_TEXT(X) printf("%s%s%s", BG_BLACK, X, COLOR_END)
 #define JUGADOR_BLANCO_TEXT(X) printf("%s%s%s", BG_WHITE, X, COLOR_END)
+
+// Estados de juego
+
+#define SIGUIENTE_TURNO 0
+#define ERROR_POSICION 1
+#define JUGADOR_SIN_POSICION 2
+#define FINAL_DE_JUEGO -1
