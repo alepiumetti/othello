@@ -1,6 +1,12 @@
 #include "./header.h"
 #include "./prototipos.h"
-#include <stdio.h>
+
+
+void clearConsole() {
+  if (system("clear") != 0) {
+    fprintf(stderr, "Error al ejecutar 'clear'\n");
+  }
+}
 
 void pausa() {
   // Limpia el búfer de entrada
@@ -13,60 +19,104 @@ void pausa() {
 
 int main() {
 
-  srand(time(NULL));
+  if (menu() == SALIR) {
+
+    return 0;
+  }
+
+  srand((unsigned int)time(NULL));
 
   int tablero[ALTO][ANCHO] = {0};
 
   // Para sortear el turno inicializarlo en 1 o 2
   // Dependiendo del nro de turno (par o impar) va a comenzar determinado
   // jugador negro = 1 y blanco = 2
-  int turno = 0;
+  int turno = 1;
 
   char jugadorNegro[NICK_SIZE] = "";
   char jugadorBlanco[NICK_SIZE] = "";
 
-  system("clear");
+  clearConsole();
 
   // Ingresa Nombre de jugadores
 
   ingresaJugador(jugadorNegro, JUGADOR_NEGRO);
   ingresaJugador(jugadorBlanco, JUGADOR_BLANCO);
 
-  // Inicializa tablero con fichas iniciales
+  do {
 
-  inicializaTablero(tablero);
-
-  muestraTablero(tablero, SIN_SELECCION, SIN_SELECCION);
-
-  while (turno != -1) {
-
-    int estado_de_juego = juegaFichas(
-        tablero, turno,
-        CALCULA_JUGADOR_POR_TURNO(turno) == 2 ? jugadorBlanco : jugadorNegro);
-
-    switch (estado_de_juego) {
-    case SIGUIENTE_TURNO:
-      turno++;
-      break;
-    case ERROR_POSICION:
-      printf("\nERROR: Posicion invalida, seleccione una posicion de las "
-             "opciones con fondo amarillo.\n");
-      pausa();
-      break;
-    case JUGADOR_SIN_POSICION:
-      printf("\nAVISO:Este turno no tiene una posicion valida de juego\n");
-      turno++;
-      pausa();
-      break;
-    case FINAL_DE_JUEGO:
-      turno = -1;
-      printf("\n\nLLEGO EL FINAL DEL JUEGO!\n\n");
-      break;
-    default:
-      turno++;
-      break;
+    if (turno == REINICIAR_JUEGO) {
+      turno = 1;
     }
-  }
+
+    // Inicializa tablero con fichas iniciales
+
+    inicializaTablero(tablero);
+
+    muestraTablero(tablero, SIN_SELECCION, SIN_SELECCION);
+
+    do {
+
+      int estado_de_juego = juegaFichas(
+          tablero, turno,
+          CALCULA_JUGADOR_POR_TURNO(turno) == 2 ? jugadorBlanco : jugadorNegro);
+
+      switch (estado_de_juego) {
+      case SIGUIENTE_TURNO:
+        turno++;
+        break;
+      case ERROR_POSICION:
+        ERROR_TEXT("\nERROR: Posicion invalida, seleccione una posicion de las "
+                   "opciones con fondo amarillo.\n");
+        pausa();
+        break;
+      case JUGADOR_SIN_POSICION:
+        WARNING_TEXT(
+            "\nAVISO:Este turno no tiene una posicion valida de juego\n");
+        turno++;
+        pausa();
+        break;
+      case FINAL_DE_JUEGO:
+        turno = -1;
+        printf("\n\nLLEGO EL FINAL DEL JUEGO!\n\n");
+        int ganador = calculaCantidadFichas(tablero);
+        if (ganador == JUGADOR_BLANCO) {
+          printf("Gano ");
+          JUGADOR_BLANCO_TEXT(jugadorBlanco);
+          printf("\n");
+        } else if (ganador == JUGADOR_NEGRO) {
+          printf("Gano ");
+          JUGADOR_NEGRO_TEXT(jugadorNegro);
+          printf("\n");
+        } else {
+          printf("Empate\n");
+        }
+        pausa();
+        break;
+      default:
+        turno++;
+        break;
+      }
+    } while (turno != FINAL_DE_JUEGO);
+
+    // Elije si termina o reinicia el juego
+    do {
+      printf("\nSi desea reiniciar el juego ingrese 1, en caso contrario "
+             "ingrese 0: ");
+      scanf("%d", &turno);
+    } while (turno != 0 && turno != 1);
+
+    if (turno == 0) {
+      turno = FINAL_DE_JUEGO;
+    } else {
+      turno = REINICIAR_JUEGO;
+    }
+
+  } while (turno == REINICIAR_JUEGO);
+
+  clearConsole();
+  printf("Gracias por jugar");
+
   return 0;
 }
 
@@ -83,7 +133,7 @@ int juegaFichas(int tablero[ALTO][ANCHO], int turno, char jugador[]) {
   if (posiciones_posibles == 0) {
     // Si no hay posiciones posibles verifica que todavia haya posiciones
     // jugables
-    if (verificaFinalDeJuego == FINAL_DE_JUEGO) {
+    if (verificaFinalDeJuego(tablero) == FINAL_DE_JUEGO) {
       return FINAL_DE_JUEGO;
     } else {
       return JUGADOR_SIN_POSICION;
@@ -109,24 +159,31 @@ int juegaFichas(int tablero[ALTO][ANCHO], int turno, char jugador[]) {
   char letra = 'A';
 
   do {
+    while (getchar() != '\n')
+      ;
     muestraTablero(tablero, fila, SIN_SELECCION);
     printf("Turno de ");
     turno % 2 == 0 ? JUGADOR_BLANCO_TEXT(jugador) : JUGADOR_NEGRO_TEXT(jugador);
     printf("\n");
-    if (columna < 65 || columna > 72) {
+    if (columna < 65 || columna > 72 ) {
       printf("Error: Debe ingresar una letra entre A y H\n");
     };
     printf("Columna (A-H):");
-    // Limpia el buffer de entrada
-    while (getchar() != '\n')
-      ;
-    scanf("%c", &letra);
 
-    // Convierte la letra a entero
+    // scanf("%c", &letra);
+
+    letra = getchar();
+
+    // if (letra == 10) {
+    //   while (getchar() == '\n')
+    //     ;
+    // }
+
+    // pausa();
 
     columna = letra;
 
-  } while (columna < 65 || columna > 72);
+  } while (columna < 65 || columna > 72  );
 
   // Formatea el valor de la letra en una posicion entendible para la matriz
   columna = columna - 65;
@@ -160,7 +217,7 @@ void ingresaJugador(char jugador[NICK_SIZE], int nro_jugador) {
 void muestraTablero(int tablero[ALTO][ANCHO], int filaSeleccionada,
                     int columnaSeleccionada) {
 
-  system("clear");
+  clearConsole();
 
   printf("        TABLERO     \n");
 
@@ -210,7 +267,15 @@ void muestraTablero(int tablero[ALTO][ANCHO], int filaSeleccionada,
 }
 
 void inicializaTablero(int tablero[ALTO][ANCHO]) {
+
+  for (int y = 0; y < ALTO; y++) {
+    for (int x = 0; x < ANCHO; x++) {
+      tablero[y][x] = 0;
+    }
+  }
+
   // Aleatoriamente inicializa el tablero en alguna de las dos formas posibles
+
   if (rand() % 2 == 0) {
     tablero[Y_4][X_D] = JUGADOR_BLANCO;
     tablero[Y_5][X_D] = JUGADOR_NEGRO;
@@ -236,8 +301,6 @@ int verificaPosiciones(int tablero[ANCHO][ALTO], int turno) {
     for (int x = 0; x < ANCHO; x++) {
 
       if (CALCULA_JUGADOR_POR_TURNO(turno) == tablero[y][x]) {
-
-        int valDEBUG = tablero[y][x];
 
         // busca fichas contrarias
         //  verifica derecha
@@ -422,6 +485,31 @@ void limpiaPosiciones(int tablero[ALTO][ANCHO]) {
   }
 }
 
+int calculaCantidadFichas(int tablero[ALTO][ANCHO]) {
+  int cantFichasNegras = 0;
+  int cantFichasBlancas = 0;
+  for (int y = 0; y < ALTO; y++) {
+    for (int x = 0; x < ANCHO; x++) {
+      if (tablero[y][x] == JUGADOR_BLANCO) {
+        cantFichasBlancas++;
+      } else if (tablero[y][x] == JUGADOR_NEGRO) {
+        cantFichasNegras++;
+      }
+    }
+  }
+
+  printf("Fichas Blancas: %d\n", cantFichasBlancas);
+  printf("Fichas Negras: %d\n", cantFichasNegras);
+
+  if (cantFichasNegras > cantFichasBlancas) {
+    return JUGADOR_NEGRO;
+  } else if (cantFichasNegras < cantFichasBlancas) {
+    return JUGADOR_BLANCO;
+  } else {
+    return 0;
+  }
+}
+
 int verificaFinalDeJuego(int tablero[ALTO][ANCHO]) {
 
   int posiciones_jugables = 0;
@@ -435,9 +523,9 @@ int verificaFinalDeJuego(int tablero[ALTO][ANCHO]) {
   }
 
   if (posiciones_jugables > 0) {
-    return FINAL_DE_JUEGO;
-  } else {
     return SIGUIENTE_TURNO;
+  } else {
+    return FINAL_DE_JUEGO;
   }
 }
 
@@ -464,8 +552,8 @@ void convierteFichas(int tablero[ALTO][ANCHO], int turno, int y, int x) {
 
     // si la ultima posicion que encontro es la de un jugador convierte las
     // fichas
-    if (tablero[y_temp][x] == CALCULA_JUGADOR_POR_TURNO(turno) && y_temp != 0) {
-      for (int index = y; index > y_temp; index--) {
+    if (tablero[y_temp][x] == CALCULA_JUGADOR_POR_TURNO(turno) && y_temp >= 0) {
+      for (int index = y; index >= y_temp; index--) {
         tablero[index][x] = CALCULA_JUGADOR_POR_TURNO(turno);
       }
     }
@@ -525,48 +613,12 @@ void convierteFichas(int tablero[ALTO][ANCHO], int turno, int y, int x) {
       x_temp--;
     }
 
-    if (tablero[y][x_temp] == CALCULA_JUGADOR_POR_TURNO(turno) && x_temp != 0) {
-      for (int index = x; index > x_temp; index--) {
+    if (tablero[y][x_temp] == CALCULA_JUGADOR_POR_TURNO(turno) && x_temp >= 0) {
+      for (int index = x; index >= x_temp; index--) {
         tablero[y][index] = CALCULA_JUGADOR_POR_TURNO(turno);
       }
     }
   }
-
-  // verifica y convierte abajo
-
-  y_temp = y + 1;
-
-  if (tablero[y_temp][x] == CALCULA_JUGADOR_CONTRARIO_POR_TURNO(turno)) {
-    while (tablero[y_temp][x] == CALCULA_JUGADOR_CONTRARIO_POR_TURNO(turno) &&
-           y_temp < ALTO) {
-      y_temp++;
-    }
-
-    if (tablero[y_temp][x] == CALCULA_JUGADOR_POR_TURNO(turno) &&
-        y_temp != ALTO) {
-      for (int index = y; index < y_temp; index++) {
-        tablero[index][x] = CALCULA_JUGADOR_POR_TURNO(turno);
-      }
-    }
-  }
-
-  // verifica y convierte arriba
-
-  y_temp = y - 1;
-
-  if (tablero[y_temp][x] == CALCULA_JUGADOR_CONTRARIO_POR_TURNO(turno)) {
-    while (tablero[y_temp][x] == CALCULA_JUGADOR_CONTRARIO_POR_TURNO(turno) &&
-           y_temp > 0) {
-      y_temp--;
-    }
-
-    if (tablero[y_temp][x] == CALCULA_JUGADOR_POR_TURNO(turno) && y_temp != 0) {
-      for (int index = y; index > y_temp; index--) {
-        tablero[y_temp][x] = CALCULA_JUGADOR_POR_TURNO(turno);
-      }
-    }
-  }
-
 
   // verifica y convierte arriba - izquierda
 
@@ -582,12 +634,12 @@ void convierteFichas(int tablero[ALTO][ANCHO], int turno, int y, int x) {
     }
 
     if (tablero[y_temp][x_temp] == CALCULA_JUGADOR_POR_TURNO(turno) &&
-        x_temp != 0 && y_temp != 0) {
+        x_temp >= 0 && y_temp >= 0) {
       // Variables temporales creadas para el bucle
       int i = y - 1;
       int j = x - 1;
 
-      while (i > y_temp && j > x_temp) {
+      while (i >= y_temp && j >= x_temp) {
         tablero[i][j] = CALCULA_JUGADOR_POR_TURNO(turno);
         i--;
         j--;
@@ -609,12 +661,12 @@ void convierteFichas(int tablero[ALTO][ANCHO], int turno, int y, int x) {
     }
 
     if (tablero[y_temp][x_temp] == CALCULA_JUGADOR_POR_TURNO(turno) &&
-        x_temp != ANCHO && y_temp != 0) {
+        x_temp != ANCHO && y_temp >= 0) {
       // Variables temporales creadas para el bucle
       int i = y - 1;
       int j = x + 1;
 
-      while (i > y_temp && j < x_temp) {
+      while (i >= y_temp && j < x_temp) {
         tablero[i][j] = CALCULA_JUGADOR_POR_TURNO(turno);
         i--;
         j++;
@@ -636,12 +688,12 @@ void convierteFichas(int tablero[ALTO][ANCHO], int turno, int y, int x) {
     }
 
     if (tablero[y_temp][x_temp] == CALCULA_JUGADOR_POR_TURNO(turno) &&
-        x_temp != 0 && y_temp != ALTO) {
+        x_temp >= 0 && y_temp != ALTO) {
       // Variables temporales creadas para el bucle
       int i = y + 1;
       int j = x - 1;
 
-      while (i < y_temp && j > x_temp) {
+      while (i < y_temp && j >= x_temp) {
         tablero[i][j] = CALCULA_JUGADOR_POR_TURNO(turno);
         i++;
         j--;
@@ -674,4 +726,78 @@ void convierteFichas(int tablero[ALTO][ANCHO], int turno, int y, int x) {
       }
     }
   }
+}
+
+int menu() {
+  int input;
+  do {
+    clearConsole();
+    printf("----Othello / Reversi----\n\n");
+    printf(">> MENU <<\n");
+    printf("1 - Jugar\n");
+    printf("2 - Instructivo\n");
+    printf("3 - Creditos\n\n");
+    printf("0 - Salir\n\n");
+
+    printf("Ingrese un numero:");
+    scanf("%d", &input);
+
+    switch (input) {
+    case INSTRUCTIVO:
+      clearConsole();
+      printf("----Othello / Reversi----\n\n");
+      printf("Se juega en un tablero de 8×8 casillas, habitualmente con fondo "
+             "verde.\n");
+      printf(
+          "Se utilizan 64 fichas, negras por un lado y blancas por el otro.\n");
+      printf("En tu turno, coloca una ficha de tu color boca arriba en una "
+             "casilla vacía.\n");
+      printf("La jugada debe “flanquear” al menos una ficha rival en alguna "
+             "dirección (horizontal, vertical o diagonal): \nes decir, colocar "
+             "tu ficha al extremo de una línea con al menos una ficha del "
+             "oponente seguida por una ficha tuya en el otro extremo.\n");
+      printf("Tras colocarla, todas las fichas enemigas flanqueadas se giran y "
+             "pasan a tu color.\n");
+
+      printf("\n");
+
+      printf("Las fichas del jugador negro se veran: ");
+      FICHA_NEGRA;
+      printf("\n");
+      printf("Las fichas del jugador negro se veran: ");
+      FICHA_BLANCA;
+      printf("\n");
+      printf("Las posiciones habilitadas para jugar se veran: ");
+      CELDA_POSIBLE;
+      printf("\n");
+      printf("Las posiciones vacias se veran: ");
+      NO_FICHA;
+      printf("\n");
+      printf("Cuando selecciones una fila, todas las posiciones vacias (salvo "
+             "las posiciones posibles) se veran:");
+      CELDA_SELECCIONADA;
+      printf("\n");
+      printf("\n");
+      printf("\n");
+
+      printf("Mas:");
+      printf("Othello online: https://www.eothello.com/\n");
+      printf("Othello: a minute to learn... A lifetime to master "
+             "https://www.eothello.com/pdf/othello-book-Brian-Rose.pdf\n");
+      pausa();
+      break;
+    case CREDITOS:
+      clearConsole();
+      printf("----Othello / Reversi----\n\n");
+      printf("Creado por Alejandro Piumetti\n");
+      printf("2025\n");
+      pausa();
+      break;
+    default:
+      break;
+    }
+
+  } while (input != SALIR && input != JUGAR);
+
+  return input;
 }
