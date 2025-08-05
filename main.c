@@ -1,21 +1,12 @@
 #include "./header.h"
 #include "./prototipos.h"
+#include "./utils.h"
+#include <stdio.h>
 
+// variables globales
 
-void clearConsole() {
-  if (system("clear") != 0) {
-    fprintf(stderr, "Error al ejecutar 'clear'\n");
-  }
-}
-
-void pausa() {
-  // Limpia el búfer de entrada
-  printf("Presione Enter para continuar...");
-  while (getchar() != '\n')
-    ;
-  while (getchar() != '\n')
-    ; // Espera hasta que se presione Enter
-}
+int validacionIntInputs =
+    1; // Usada para el ingreso de la validacion de inputs enteros
 
 int main() {
 
@@ -71,6 +62,7 @@ int main() {
         pausa();
         break;
       case JUGADOR_SIN_POSICION:
+        clearConsole();
         WARNING_TEXT(
             "\nAVISO:Este turno no tiene una posicion valida de juego\n");
         turno++;
@@ -78,7 +70,9 @@ int main() {
         break;
       case FINAL_DE_JUEGO:
         turno = -1;
-        printf("\n\nLLEGO EL FINAL DEL JUEGO!\n\n");
+        clearConsole();
+        SUCCESS_TEXT("\n\nLLEGO EL FINAL DEL JUEGO!\n\n");
+        muestraTablero(tablero, SIN_SELECCION, SIN_SELECCION);
         int ganador = calculaCantidadFichas(tablero);
         if (ganador == JUGADOR_BLANCO) {
           printf("Gano ");
@@ -100,11 +94,24 @@ int main() {
     } while (turno != FINAL_DE_JUEGO);
 
     // Elije si termina o reinicia el juego
+    validacionIntInputs = 1;
     do {
+      clearConsole();
+
+      if(validacionIntInputs != 1){
+        ERROR_TEXT("Ingrese un valor valido\n");
+      }
+
+      if(turno != 0 && turno != 1){
+        WARNING_TEXT("Ingrese una opcion valida. \n");
+      }
+
       printf("\nSi desea reiniciar el juego ingrese 1, en caso contrario "
              "ingrese 0: ");
-      scanf("%d", &turno);
-    } while (turno != 0 && turno != 1);
+      validacionIntInputs = scanf("%d", &turno);
+      
+      clearBuffer();
+    } while (turno != 0 && turno != 1 && validacionIntInputs != 1);
 
     if (turno == 0) {
       turno = FINAL_DE_JUEGO;
@@ -123,11 +130,8 @@ int main() {
 int juegaFichas(int tablero[ALTO][ANCHO], int turno, char jugador[]) {
 
   limpiaPosiciones(tablero);
-  int fila, columna;
-  // do {
+  int fila = 1, columna = 65;
 
-  fila = 1;
-  columna = 65;
   int posiciones_posibles = verificaPosiciones(tablero, turno);
 
   if (posiciones_posibles == 0) {
@@ -141,17 +145,24 @@ int juegaFichas(int tablero[ALTO][ANCHO], int turno, char jugador[]) {
   }
 
   // Ingresa la posicion de la fila que va a seleccionar
+  validacionIntInputs = 1;
   do {
+
+    // if (validacionIntInputs != 1) {
+    //   clearBuffer();
+    // }
+
     muestraTablero(tablero, SIN_SELECCION, SIN_SELECCION);
     printf("Turno de ");
     turno % 2 == 0 ? JUGADOR_BLANCO_TEXT(jugador) : JUGADOR_NEGRO_TEXT(jugador);
     printf("\n");
-    if (fila < 1 || fila > 8) {
-      printf("ERROR: Debe ingresar un numero entre 1 y 8\n");
+    if (fila < 1 || fila > 8 || validacionIntInputs != 1) {
+      ERROR_TEXT("ERROR: Debe ingresar un numero entre 1 y 8\n");
     }
     printf("Fila (1-8):");
-    scanf("%d", &fila);
-  } while (fila < 1 || fila > 8);
+    validacionIntInputs = scanf("%d", &fila);
+    clearBuffer();
+  } while (fila < 1 || fila > 8 || validacionIntInputs != 1);
 
   // Ubica correctamente la seleccion de la fila
   fila = fila - 1;
@@ -159,36 +170,29 @@ int juegaFichas(int tablero[ALTO][ANCHO], int turno, char jugador[]) {
   char letra = 'A';
 
   do {
-    while (getchar() != '\n')
-      ;
     muestraTablero(tablero, fila, SIN_SELECCION);
     printf("Turno de ");
     turno % 2 == 0 ? JUGADOR_BLANCO_TEXT(jugador) : JUGADOR_NEGRO_TEXT(jugador);
     printf("\n");
-    if (columna < 65 || columna > 72 ) {
-      printf("Error: Debe ingresar una letra entre A y H\n");
+    if (columna < 65 || (columna > 72 && columna < 97) || columna > 104) {
+      ERROR_TEXT("Error: Debe ingresar una letra entre A y H\n");
     };
     printf("Columna (A-H):");
 
-    // scanf("%c", &letra);
-
-    letra = getchar();
-
-    // if (letra == 10) {
-    //   while (getchar() == '\n')
-    //     ;
-    // }
-
-    // pausa();
+    scanf("%c", &letra);
+    clearBuffer();
 
     columna = letra;
 
-  } while (columna < 65 || columna > 72  );
+  } while (columna < 65 || (columna > 72 && columna < 97) || columna > 104);
 
   // Formatea el valor de la letra en una posicion entendible para la matriz
-  columna = columna - 65;
 
-  // } while (tablero[fila][columna] != (CALCULA_JUGADOR_POR_TURNO(turno) + 2));
+  if (columna >= 65 && columna <= 72) {
+    columna = columna - 65;
+  } else {
+    columna = columna - 97;
+  }
 
   // Muestra aviso de ingreso de posicion erroneo
   if (tablero[fila][columna] != (CALCULA_JUGADOR_POR_TURNO(turno) + 2) ||
@@ -206,12 +210,16 @@ int juegaFichas(int tablero[ALTO][ANCHO], int turno, char jugador[]) {
 
 void ingresaJugador(char jugador[NICK_SIZE], int nro_jugador) {
 
-  printf("Ingrese el nombre del jugador ");
-  nro_jugador == JUGADOR_NEGRO ? JUGADOR_NEGRO_TEXT("color negro")
-                               : JUGADOR_BLANCO_TEXT("color blanco");
-  printf(": ");
-  // TODO: validar input de 0 a 20 caracteres
-  scanf("%19s", jugador); // Lee hasta 19 caracteres para evitar desbordamiento
+  clearConsole();
+  WARNING_TEXT(
+      "El nombre sera de un maximo de 20 caracteres.\nEn caso de ingresar "
+      "mas, tomara los primeros 20.\n");
+
+  nro_jugador == JUGADOR_NEGRO ? JUGADOR_NEGRO_TEXT("Jugador color NEGRO")
+                               : JUGADOR_BLANCO_TEXT("Jugador color BLANCO");
+  printf("\nIngrese su nombre: ");
+  scanf("%20s", jugador); // Lee hasta 19 caracteres para evitar desbordamiento
+  clearBuffer();
 }
 
 void muestraTablero(int tablero[ALTO][ANCHO], int filaSeleccionada,
@@ -729,23 +737,40 @@ void convierteFichas(int tablero[ALTO][ANCHO], int turno, int y, int x) {
 }
 
 int menu() {
-  int input;
+  int input = 1;
+  validacionIntInputs = 1;
   do {
-    clearConsole();
-    printf("----Othello / Reversi----\n\n");
-    printf(">> MENU <<\n");
-    printf("1 - Jugar\n");
-    printf("2 - Instructivo\n");
-    printf("3 - Creditos\n\n");
-    printf("0 - Salir\n\n");
+    do {
 
-    printf("Ingrese un numero:");
-    scanf("%d", &input);
+      if (validacionIntInputs != 1) {
+        ERROR_TEXT(
+            "Tipo de dato invalido. Por favor ingrese un valor valido.\n");
+        pausa();
+      }
+
+      if (input < 0 || input > 3) {
+        WARNING_TEXT("Opcion invalida. Debe elegir una opcion valida\n");
+        pausa();
+      }
+
+      clearConsole();
+      printTitle();
+      printf(">> MENU <<\n");
+      printf("1 - Jugar\n");
+      printf("2 - Instructivo\n");
+      printf("3 - Creditos\n\n");
+      printf("0 - Salir\n\n");
+
+      printf("Ingrese un numero:");
+      validacionIntInputs = scanf("%d", &input);
+      clearBuffer();
+
+    } while (validacionIntInputs != 1 || input < 0 || input > 3);
 
     switch (input) {
     case INSTRUCTIVO:
       clearConsole();
-      printf("----Othello / Reversi----\n\n");
+      printTitle();
       printf("Se juega en un tablero de 8×8 casillas, habitualmente con fondo "
              "verde.\n");
       printf(
@@ -788,7 +813,7 @@ int menu() {
       break;
     case CREDITOS:
       clearConsole();
-      printf("----Othello / Reversi----\n\n");
+      printTitle();
       printf("Creado por Alejandro Piumetti\n");
       printf("2025\n");
       pausa();

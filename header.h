@@ -53,6 +53,7 @@
 #define CELDA_POSIBLE printf("%s - %s", BG_HC_YELLOW, COLOR_END)
 #define ERROR_TEXT(X) printf("%s%s%s", BG_WHITE_RED, X, COLOR_END)
 #define WARNING_TEXT(X) printf("%s%s%s", BG_HC_YELLOW, X, COLOR_END)
+#define SUCCESS_TEXT(X) printf("%s%s%s", BG_GREEN, X, COLOR_END)
 
 // Jugadores
 
